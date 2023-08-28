@@ -1,19 +1,59 @@
+# This Dockerfile is used to build an headles vnc image based on Debian
+
 FROM ubuntu:20.04
 
-# Install vnc, xvfb in order to create a 'fake' display and chrome
-RUN 	export DEBIAN_FRONTEND=noninteractive
-RUN 	export DISPLAY=0
+## Connection ports for controlling the UI:
+# VNC port:5901
+# noVNC webport, connect via http://IP:6901/?password=vncpassword
+ENV DISPLAY=:1 \
+    VNC_PORT=5901 \
+    NO_VNC_PORT=6901
+EXPOSE $VNC_PORT $NO_VNC_PORT
 
-RUN 	ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime
+### Envrionment config
+ENV HOME=/headless \
+    TERM=xterm \
+    STARTUPDIR=/dockerstartup \
+    INST_SCRIPTS=/headless/install \
+    NO_VNC_HOME=/headless/noVNC \
+    DEBIAN_FRONTEND=noninteractive \
+    VNC_COL_DEPTH=24 \
+    VNC_RESOLUTION=1920x1080 \
+    VNC_PW=vncpassword \
+    VNC_VIEW_ONLY=false
+WORKDIR $HOME
+
+### Add all install scripts for further steps
+ADD ./docker-headless-vnc-container/src/common/install/ $INST_SCRIPTS/
+ADD ./docker-headless-vnc-container/src/debian/install/ $INST_SCRIPTS/
+
+### Install some common tools
+RUN $INST_SCRIPTS/tools.sh
+ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en' LC_ALL='en_US.UTF-8'
+
+### Install custom fonts
+RUN $INST_SCRIPTS/install_custom_fonts.sh
+
+### Install xvnc-server & noVNC - HTML5 based VNC viewer
+RUN $INST_SCRIPTS/tigervnc.sh
+RUN $INST_SCRIPTS/no_vnc.sh
+
+### Install IceWM UI
+RUN $INST_SCRIPTS/icewm_ui.sh
+ADD ./docker-headless-vnc-container/src/debian/icewm/ $HOME/
+
+### configure startup
+RUN $INST_SCRIPTS/libnss_wrapper.sh
+ADD ./docker-headless-vnc-container/src/common/scripts $STARTUPDIR
+RUN $INST_SCRIPTS/set_user_permission.sh $STARTUPDIR $HOME
 
 RUN 	apt-get update &&\
-	 	apt-get install -y tzdata &&\ 
-	 	dpkg-reconfigure --frontend noninteractive tzdata &&\
-	 	apt-get install -y x11vnc xvfb zip wget curl psmisc supervisor gconf-service libasound2 libatk1.0-0 libatk-bridge2.0-0 libc6 libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-bin libnspr4 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 ca-certificates fonts-liberation libappindicator1 libnss3 lsb-release xdg-utils libgbm-dev nginx libcurl3-gnutls
+	 	apt-get install -y zip wget curl psmisc supervisor gconf-service libasound2 libatk1.0-0 libatk-bridge2.0-0 libc6 libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-bin libnspr4 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 ca-certificates fonts-liberation libappindicator1 libnss3 lsb-release xdg-utils libgbm-dev libcurl3-gnutls
 
 RUN 	curl --silent --location https://deb.nodesource.com/setup_18.x | bash - &&\
 		apt-get -y -qq install nodejs &&\
 		apt-get -y -qq install build-essential &&\
+		corepack enable &&\
 		fc-cache -f -v
 
 RUN wget https://d2qz0zcp53gaw.cloudfront.net/orbita-browser-latest.tar.gz -O /tmp/orbita-browser.tar.gz
@@ -26,31 +66,14 @@ RUN cd /tmp &&\
 RUN apt-get -qq clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # WORKER INSTALL
-
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=true
 COPY package.json /opt/orbita/package.json
 RUN cd /opt/orbita &&\
-	npm install
+	pnpm install
 
+RUN mkdir -p /headless/.gologin/browser
+COPY fonts /headless/.gologin/browser/fonts
 
-# Add the browser user (orbita)
-RUN groupadd -r orbita && useradd -r -g orbita -s/bin/bash -G audio,video,sudo -p $(echo 1 | openssl passwd -1 -stdin) orbita  \
-  && mkdir -p /home/orbita/Downloads \
-  && chown -R orbita:orbita /home/orbita
-
-RUN echo 'orbita ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-
-RUN mkdir -p /home/orbita/.gologin/browser
-COPY fonts /home/orbita/.gologin/browser/fonts
-
-RUN rm /etc/nginx/sites-enabled/default
-COPY orbita.conf /etc/nginx/conf.d/orbita.conf
-RUN chmod 777 /var/lib/nginx -R
-RUN chmod 777 /var/log -R
-RUN chmod 777 /run -R
-#sudo orbita
-RUN usermod -a -G sudo orbita
-
-EXPOSE 3000
 
 COPY index.js /opt/orbita/index.js
 COPY influxdata.js /opt/orbita/influxdata.js
@@ -58,12 +81,9 @@ RUN mkdir /opt/orbita/prisma
 ADD prisma/ /opt/orbita/prisma/
 COPY entrypoint.sh /entrypoint.sh
 
-RUN	 chmod 777 /entrypoint.sh \
-	&& mkdir /tmp/.X11-unix \
-	&& chmod 1777 /tmp/.X11-unix 
+RUN	 chmod 777 /entrypoint.sh 
 
 WORKDIR /opt/orbita
-RUN npm run postinstall
+RUN pnpm run postinstall
 
-USER orbita
 ENTRYPOINT ["/entrypoint.sh"]

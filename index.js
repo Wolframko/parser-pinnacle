@@ -3,8 +3,6 @@ const Sentry = require("@sentry/node");
 const { chromium } = require("playwright");
 const InfluxDB = require('@influxdata/influxdb-client').InfluxDB;
 const Point = require('@influxdata/influxdb-client').Point;
-const SCREEN_WIDTH = process.env.SCREEN_WIDTH;
-const SCREEN_HEIGHT = process.env.SCREEN_HEIGHT;
 const { PrismaClient } = require('@prisma/client');
 
 Sentry.init({
@@ -40,7 +38,7 @@ const gologinParams = {
     profile_id: process.env.PROFILE_ID,
     remote_debugging_port: 3500,
     executablePath: '/usr/bin/orbita-browser/chrome',
-    extra_params: ['--start-maximized',  '--disable-dev-shm-usage', '--no-sandbox', '--no-zygote', '--window-position=0,0', `--window-size=${SCREEN_WIDTH},${SCREEN_HEIGHT}`],
+    extra_params: ['--start-maximized',  '--disable-dev-shm-usage', '--no-sandbox', '--no-zygote', '--window-position=0,0', `--window-size=1920,1080`],
 };
 
 const GL = new GoLogin(gologinParams);
