@@ -1,6 +1,6 @@
 # This Dockerfile is used to build an headles vnc image based on Debian
 
-FROM ubuntu:20.04
+FROM debian:11
 
 ## Connection ports for controlling the UI:
 # VNC port:5901
