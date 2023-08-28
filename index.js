@@ -6,10 +6,10 @@ const Point = require('@influxdata/influxdb-client').Point;
 const { PrismaClient } = require('@prisma/client');
 
 Sentry.init({
-    dsn: "https://13533821c597a39fa5c937ec2a877715@o4505658843529216.ingest.sentry.io/4505658849034240",
+    dsn: "https://b5066f92465d4e02b0ed0ab8f91508c4@errors.wolframko.ru/1",
 
     // Performance Monitoring
-    tracesSampleRate: 1.0, // Capture 100% of the transactions, reduce in production!
+    tracesSampleRate: 0.1, // Capture 100% of the transactions, reduce in production!
 });
 
 let prisma = new PrismaClient();
