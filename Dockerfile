@@ -1,6 +1,6 @@
 # This Dockerfile is used to build an headles vnc image based on Debian
 
-FROM debian:11
+FROM node:lts-bullseye-slim
 
 ## Connection ports for controlling the UI:
 # VNC port:5901
@@ -50,10 +50,7 @@ RUN $INST_SCRIPTS/set_user_permission.sh $STARTUPDIR $HOME
 RUN 	apt-get update &&\
 	 	apt-get install -y zip wget curl psmisc supervisor gconf-service libasound2 libatk1.0-0 libatk-bridge2.0-0 libc6 libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-bin libnspr4 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 ca-certificates fonts-liberation libappindicator1 libnss3 lsb-release xdg-utils libgbm-dev libcurl3-gnutls
 
-RUN 	curl --silent --location https://deb.nodesource.com/setup_18.x | bash - &&\
-		apt-get -y -qq install nodejs &&\
-		apt-get -y -qq install build-essential &&\
-		corepack enable &&\
+RUN     corepack enable &&\
 		fc-cache -f -v
 
 RUN wget https://d2qz0zcp53gaw.cloudfront.net/orbita-browser-latest.tar.gz -O /tmp/orbita-browser.tar.gz
