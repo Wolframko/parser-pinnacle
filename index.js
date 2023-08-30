@@ -63,7 +63,7 @@ async function startBrowser() {
 
 startBrowser();
 
-async function addOrUpdateMatch(item) {
+async function addOrUpdateMatch(item, transaction) {
     const matchId = item.id.toString();
     const startTime = new Date(item.startTime);
     const isLive = item.isLive;
@@ -78,14 +78,15 @@ async function addOrUpdateMatch(item) {
     if (!discipline) {
         return;
     }
+    let ops = []
 
-    await prisma.tournaments.upsert({
+    await transaction.tournaments.upsert({
         where: { id: tournamentId },
         update: { name: tournamentName, updatedAt: new Date() },
         create: { id: tournamentId, name: tournamentName },
     });
 
-    await prisma.matches.upsert({
+    await transaction.matches.upsert({
         where: { id: matchId },
         update: { time_start: startTime, time_end: new Date(), isLive, updated: new Date(), tournamentId },
         create: {
@@ -102,13 +103,13 @@ async function addOrUpdateMatch(item) {
         const teamId = participant.name;
         const teamName = participant.name;
 
-        await prisma.teams.upsert({
+        await transaction.teams.upsert({
             where: { id: teamId },
             update: { name: teamName, updated: new Date() },
             create: { id: teamId, name: teamName },
         });
 
-        await prisma.matches.update({
+        await transaction.matches.update({
             where: { id: matchId },
             data: {
                 teams: {
@@ -135,9 +136,11 @@ async function startParse() {
                     saveToInfluxDB(filterData(jsonResponse));
                     console.log('markets');
                 } else if (url.includes('matchups')) {
-                    for (const matchup of jsonResponse) {
-                        await addOrUpdateMatch(matchup);
-                    }
+                    await prisma.$transaction(async (tx) => {
+                        for (const matchup of jsonResponse) {
+                            await addOrUpdateMatch(matchup, tx);
+                        }
+                    })
                     console.log('matchups');
                 }
 
