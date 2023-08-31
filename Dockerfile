@@ -74,6 +74,7 @@ COPY fonts /headless/.gologin/browser/fonts
 
 COPY index.js /opt/orbita/index.js
 COPY influxdata.js /opt/orbita/influxdata.js
+COPY before-shutdown.js /opt/orbita/before-shutdown.js
 RUN mkdir /opt/orbita/prisma 
 ADD prisma/ /opt/orbita/prisma/
 COPY entrypoint.sh /entrypoint.sh

@@ -4,7 +4,7 @@ const { chromium } = require("playwright");
 const InfluxDB = require('@influxdata/influxdb-client').InfluxDB;
 const Point = require('@influxdata/influxdb-client').Point;
 const { PrismaClient } = require('@prisma/client');
-
+const beforeShutdown = require('./before-shutdown');
 Sentry.init({
     dsn: "https://b5066f92465d4e02b0ed0ab8f91508c4@errors.wolframko.ru/1",
 
@@ -44,6 +44,11 @@ const gologinParams = {
 const GL = new GoLogin(gologinParams);
 console.log(gologinParams);
 
+beforeShutdown(async function() {
+    await browser.close();
+    await GL.stop;
+})
+
 async function startBrowser() {
     const wsUrl = (await GL.start({
         uploadCookiesToServer: true,
@@ -62,7 +67,8 @@ async function startBrowser() {
 }
 
 startBrowser();
-
+await browser.close();
+await GL.stop();
 async function addOrUpdateMatch(item, transaction) {
     const matchId = item.id.toString();
     const startTime = new Date(item.startTime);
@@ -226,3 +232,4 @@ function saveToInfluxDB(data) {
 
     console.log('Data saved to InfluxDB');
 }
+
