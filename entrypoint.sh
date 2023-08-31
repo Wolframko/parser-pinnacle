@@ -3,4 +3,4 @@
 bash /dockerstartup/vnc_startup.sh --wait &
 cd /opt/orbita
 sleep 3
-node --inspect index.js
+node --inspect=0.0.0.0 index.js
