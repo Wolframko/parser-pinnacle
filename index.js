@@ -61,7 +61,7 @@ async function startBrowser() {
     globalpage = await context.newPage();
 
 
-    await globalpage.goto('https://www.pinnacle.com/en/esports/games/dota-2/matchups/', { waitUntil: 'commit' });
+    await globalpage.goto('https://www.pinnacle.com/en/esports/games/csgo/matchups', { waitUntil: 'commit' });
 
     await startParse();
 }
