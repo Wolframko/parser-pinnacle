@@ -67,8 +67,6 @@ async function startBrowser() {
 }
 
 startBrowser();
-await browser.close();
-await GL.stop();
 async function addOrUpdateMatch(item, transaction) {
     const matchId = item.id.toString();
     const startTime = new Date(item.startTime);
