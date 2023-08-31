@@ -3,4 +3,4 @@
 bash /dockerstartup/vnc_startup.sh --wait &
 cd /opt/orbita
 sleep 3
-npm run profile
+npm start

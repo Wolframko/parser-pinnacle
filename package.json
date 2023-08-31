@@ -5,9 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "pm2 start index.js --max-memory-restart 300M --no-daemon",
-    "postinstall": "prisma generate",
-    "profile": "node --inspect index.js"
+    "start": "pm2 start index.js --max-memory-restart 300M --no-daemon --restart-delay 300000",
+    "postinstall": "prisma generate"
   },
   "author": "",
   "license": "ISC",
