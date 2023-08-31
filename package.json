@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js",
+    "start": "pm2 start index.js --max-memory-restart 300M",
     "postinstall": "prisma generate"
   },
   "author": "",
@@ -16,7 +16,8 @@
     "@sentry/node": "^7.61.1",
     "express": "^4.18.2",
     "gologin": "^1.0.51",
-    "playwright": "^1.36.2"
+    "playwright": "^1.36.2",
+    "pm2": "^5.3.0"
   },
   "devDependencies": {
     "@types/node": "^20.4.6",
