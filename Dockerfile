@@ -1,14 +1,14 @@
 # This Dockerfile is used to build an headles vnc image based on Debian
 
-FROM oven/bun:alpine
+FROM node:18-slim
 
-
+RUN corepack enable
 
 # WORKER INSTALL
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=true
 COPY package.json /opt/orbita/package.json
 RUN cd /opt/orbita &&\
-	bun install
+	pnpm install
 
 
 COPY index.js /opt/orbita/index.js
@@ -19,4 +19,4 @@ ADD prisma/ /opt/orbita/prisma/
 
 WORKDIR /opt/orbita
 
-CMD [ "bun", "start" ]
+CMD [ "pnpm", "start" ]
