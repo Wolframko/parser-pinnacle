@@ -40,7 +40,6 @@ beforeShutdown(async function() {
 })
 
 async function startBrowser() {
-    console.log('url: ', wsUrl);
     const browser = chromium.connect({
         browserWSEndpoint: 'ws://browser.wolframko.ru',
       });
