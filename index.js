@@ -33,29 +33,18 @@ app.listen(port, () => {
 });
 
 let globalpage;
-const gologinParams = {
-    token: process.env.TOKEN,
-    profile_id: process.env.PROFILE_ID,
-    remote_debugging_port: 3500,
-    executablePath: '/usr/bin/orbita-browser/chrome',
-    extra_params: ['--start-maximized',  '--disable-dev-shm-usage', '--no-sandbox', '--no-zygote', '--window-position=0,0', `--window-size=1920,1080`],
-};
 
-const GL = new GoLogin(gologinParams);
 console.log(gologinParams);
 
 beforeShutdown(async function() {
     await browser.close();
-    await GL.stop;
 })
 
 async function startBrowser() {
-    const wsUrl = (await GL.start({
-        uploadCookiesToServer: true,
-        autoUpdateBrowser: false,
-    })).wsUrl;
     console.log('url: ', wsUrl);
-    const browser = await chromium.connectOverCDP(wsUrl);
+    const browser = chromium.connect({
+        browserWSEndpoint: 'ws://browser.wolframko.ru',
+      });
     console.log('browser is connected: ' + browser.isConnected())
     const context = browser.contexts().length !== 0 ? browser.contexts()[0] : await browser.newContext();
     globalpage = await context.newPage();
