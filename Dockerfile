@@ -19,4 +19,6 @@ ADD prisma/ /opt/orbita/prisma/
 
 WORKDIR /opt/orbita
 
+RUN npx prisma generate
+
 CMD [ "pnpm", "start" ]
