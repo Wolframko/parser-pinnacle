@@ -143,7 +143,7 @@ async function startParse() {
 
 
 const influxDB = new InfluxDB({
-    url: 'http://91.193.43.228:8086',
+    url: 'https://influx.wolframko.ru',
     token: 'IIrT-p8S8mj008Mij6n6hCCMo62O2WSow-rV0oGNR089UI9tsvgCAL2sbfHs9o9zymbqzNMUxIgStUHgka4PSg==',
     timeout: 1000001,
 });
