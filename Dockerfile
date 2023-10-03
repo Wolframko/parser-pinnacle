@@ -3,6 +3,7 @@
 FROM node:18-slim
 
 RUN corepack enable
+RUN apt-get update -y && apt-get install -y openssl
 
 # WORKER INSTALL
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=true
