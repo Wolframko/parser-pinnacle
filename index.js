@@ -1,4 +1,3 @@
-const GoLogin = require('gologin');
 const Sentry = require("@sentry/node");
 const { chromium } = require("playwright");
 const InfluxDB = require('@influxdata/influxdb-client').InfluxDB;
@@ -34,7 +33,7 @@ app.listen(port, () => {
 
 let globalpage;
 
-console.log(gologinParams);
+
 
 beforeShutdown(async function() {
     await browser.close();
