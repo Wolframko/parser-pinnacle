@@ -40,10 +40,7 @@ beforeShutdown(async function() {
 })
 
 async function startBrowser() {
-    const browser = chromium.connect({
-        browserWSEndpoint: 'ws://browser.wolframko.ru',
-      });
-    console.log('browser is connected: ' + browser.isConnected())
+    const browser = await chromium.connectOverCDP('ws://91.193.43.228:3092')
     const context = browser.contexts().length !== 0 ? browser.contexts()[0] : await browser.newContext();
     globalpage = await context.newPage();
 
@@ -146,13 +143,13 @@ async function startParse() {
 
 
 const influxDB = new InfluxDB({
-    url: process.env.INFLUXDB_URL,
-    token: process.env.INFLUXDB_TOKEN,
+    url: 'http://91.193.43.228:8086',
+    token: 'IIrT-p8S8mj008Mij6n6hCCMo62O2WSow-rV0oGNR089UI9tsvgCAL2sbfHs9o9zymbqzNMUxIgStUHgka4PSg==',
     timeout: 1000001,
 });
 
 const writeApi = influxDB.getWriteApi(
-    process.env.INFLUXDB_ORG,
+    'Prince',
     "matches"
 );
 
