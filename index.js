@@ -45,7 +45,7 @@ async function startBrowser() {
     globalpage = await context.newPage();
 
 
-    await globalpage.goto('https://www.pinnacle.com/en/esports/games/csgo/matchups', { waitUntil: 'commit' });
+    await globalpage.goto('https://www.pinnacle.com/en/esports/games/cs2/matchups', { waitUntil: 'commit' });
 
     await startParse();
 }
@@ -60,7 +60,7 @@ async function addOrUpdateMatch(item, transaction) {
     const tournamentName = league.name;
     const participants = item.participants;
 
-    const validDisciplines = ['Dota 2', 'CS:GO', 'League of Legends'];
+    const validDisciplines = ['Dota 2', 'CS:GO', 'League of Legends', 'CS2'];
     const discipline = validDisciplines.find((d) => tournamentName.startsWith(d));
 
     if (!discipline) {
