@@ -1,1 +1,1 @@
-docker buildx build . -t parser-pinnacle
+docker buildx build . -t parser-mrcat

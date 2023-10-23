@@ -1,25 +1,32 @@
-# This Dockerfile is used to build an headles vnc image based on Debian
+FROM consol/debian-xfce-vnc:nightly
+ENV REFRESHED_AT 2023-11-23
 
-FROM node:18-slim
 
+USER 0
+RUN apt-get install -y curl \
+  && curl -sL https://deb.nodesource.com/setup_18.x | bash - \
+  && apt-get install -y nodejs openssl
 RUN corepack enable
-RUN apt-get update -y && apt-get install -y openssl
+
+RUN mkdir /opt/project
+RUN chown 1000 /opt/project
+USER 1000
+
+
 
 # WORKER INSTALL
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=true
-COPY package.json /opt/orbita/package.json
-RUN cd /opt/orbita &&\
+COPY package.json /opt/project/package.json
+RUN cd /opt/project &&\
 	pnpm install
 
 
-COPY index.js /opt/orbita/index.js
-COPY influxdata.js /opt/orbita/influxdata.js
-COPY before-shutdown.js /opt/orbita/before-shutdown.js
-RUN mkdir /opt/orbita/prisma 
-ADD prisma/ /opt/orbita/prisma/
+COPY index.js /opt/project/index.js
+COPY influxdata.js /opt/project/influxdata.js
+COPY before-shutdown.js /opt/project/before-shutdown.js
+RUN mkdir /opt/project/prisma 
+ADD prisma/ /opt/project/prisma/
 
-WORKDIR /opt/orbita
+WORKDIR /opt/project
 
 RUN npx prisma generate
-
-CMD [ "pnpm", "start" ]
