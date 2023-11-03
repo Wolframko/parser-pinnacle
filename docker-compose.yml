@@ -1,0 +1,37 @@
+version: "3"
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    network_mode: "service:gluetun"
+    environment:
+      - DATABASE_URL="postgresql://postgres:example@localhost:5432/taxonomy?schema=public"
+      - APPWRITE=https://appwrite.wolframko.ru/v1
+      - PROJECT=65402d551911a17fc8fb
+      - KEY=ced51ca79c8a17c504a30fd8f48e3a7f0499963f835d06628ae84815e47ad7d1a4782271c10e3af2c86eab120ac090b45605c72b55c5474ecc005520368e7ce61ddc21c428359de4e37a99356277f60b687e5c6c707275e4df15481def760ebd9e30af475764205b0440885faf5b92f9dfb832fca92568727f2143bc6557f636
+
+  gluetun:
+    image: qmcgaw/gluetun
+    # container_name: gluetun
+    # line above must be uncommented to allow external containers to connect.
+    # See https://github.com/qdm12/gluetun-wiki/blob/main/setup/connect-a-container-to-gluetun.md#external-container-to-gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    ports:
+      - 8888:8888/tcp # HTTP proxy
+      - 8388:8388/tcp # Shadowsocks
+      - 8388:8388/udp # Shadowsocks
+      - 6901:6901
+      - 5901:5901
+    # volumes:
+    #   - gluetun:/gluetun
+    environment:
+      # OpenVPN:
+      - VPN_SERVICE_PROVIDER=private internet access
+      - OPENVPN_USER=p5078456
+      - OPENVPN_PASSWORD=qpt-ZGA!gtp7jgf7pad
+      - SERVER_REGIONS=Netherlands
+      - VPN_PORT_FORWARDING=on
