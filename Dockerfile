@@ -32,5 +32,6 @@ COPY index.ts /opt/project/index.ts
 ADD ./types/ /opt/project/types/
 
 WORKDIR /opt/project
-
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 RUN pnpm i
