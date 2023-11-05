@@ -97,16 +97,27 @@ async function addOrUpdateMatch(item: Match[]) {
                 : "lol",
         pinnacleUpdate: new Date(Date.now()).toISOString(),
       };
-      await databases.createDocument("parser", "matches", sdk.ID.unique(), newMatch);
+      try {
+        await databases.createDocument("parser", "matches", sdk.ID.unique(), newMatch);
+      } catch (error) {
+        console.log(error)
+        console.log(newMatch)
+      }
+      
     } else {
-      await databases.updateDocument(
-        "parser",
-        "matches",
-        match.documents[0].$id,
-        {
-          pinnacleUpdate: new Date(Date.now()).toISOString(),
-        }
-      );
+      try {
+        await databases.updateDocument(
+          "parser",
+          "matches",
+          match.documents[0].$id,
+          {
+            pinnacleUpdate: new Date(Date.now()).toISOString(),
+          }
+        );
+      } catch (error) {
+        console.log(error)
+      }
+      
     }
   });
 }
