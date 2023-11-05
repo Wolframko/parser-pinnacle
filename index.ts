@@ -162,7 +162,8 @@ function addOdds(data: BetData[]) {
     )
 
     if (odds.total > 1) {
-      const latestPrices = odds.documents[0].prices;
+      const latestDoc: any = odds.documents[0]
+      const latestPrices = latestDoc.prices;
 
       if (latestPrices.length > 0) {
         const pricearray = [latestPrices[0].price, latestPrices[1].price];
