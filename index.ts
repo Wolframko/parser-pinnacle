@@ -43,17 +43,19 @@ start();
 
 async function startParse(page: Page) {
   page.on("response", async (response: any) => {
-    const url = response.url();
+    if (response.request().method().toUpperCase() != "OPTIONS") {
+      const url = response.url();
 
-    if (url.includes("sports/12/markets/straight")) {
-      const data = await response.json();
-      await addOdds(data);
-    }
-
-    if (url.includes("sports/12/matchups")) {
-      const data = await response.json();
-
-      await addOrUpdateMatch(data);
+      if (url.includes("sports/12/markets/straight")) {
+        const data = await response.json();
+        await addOdds(data);
+      }
+  
+      if (url.includes("sports/12/matchups")) {
+        const data = await response.json();
+  
+        await addOrUpdateMatch(data);
+      }
     }
   });
 }
