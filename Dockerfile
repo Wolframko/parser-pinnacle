@@ -29,6 +29,7 @@ RUN curl -fsSL https://bun.sh/install | bash
 COPY package.json /opt/project/package.json
 
 COPY index.ts /opt/project/index.ts
+COPY filldb.ts /opt/project/filldb.ts
 ADD ./types/ /opt/project/types/
 
 WORKDIR /opt/project
