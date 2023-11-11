@@ -1,1 +1,1 @@
- docker run -p 6901:6901 -p 5901:5901 parser-mrcat
+ docker run -e APPWRITE=https://appwrite.wolframko.ru/v1 -e PROJECT=654e97a5259acf9c6abd -e KEY=407a4847506e5c3ce13e55aa4212173f15b608ce7113fdab045838da0c3015ac63a701f23d4be75f09511a0cfda99896acbe9060baf588c2bcbf642a8b3eb0e4b115e5b82096f3a996f9dfb6c0992252baecc4026c831ed35ff9d384b909ff8a6e281c86d34924cfc60766b8b8943edacdd68fb1c947119b04cac3e1de83f3f2 -p 6901:6901 -p 5901:5901 parser-mrcat
