@@ -2,18 +2,40 @@ import puppeteer, { Page } from "puppeteer";
 import sdk from "node-appwrite";
 import "dotenv/config"
 import { BetData, Match } from "./types/pinnacle";
+import { createDirectus, createItems, readItem, readItems, rest, schemaSnapshot, staticToken, triggerFlow, updateItems } from "@directus/sdk";
+import { DirectusError } from "@directus/errors";
+interface Matches {
+  discipline: string,
+  id: number,
+  league: string,
+  pinnacleId: number,
+  team1: string,
+  team2: string,
+  pinnacleUpdate: string,
+}
 
-const client = new sdk.Client();
+interface PinnacleOdd {
+  date_created: string,
+  id: number,
+  map: number,
+  match: number,
+  type: string,
+}
 
-console.log(process.env.APPWRITE);
+interface PinnaclePrice {
+  id: number,
+  designation: string,
+  points: number,
+  price: number
+}
 
-client
-  .setEndpoint(process.env.APPWRITE || '')
-  .setProject(process.env.PROJECT || '')
-  .setKey(process.env.KEY || '');
+interface Schema {
+  matches: Matches[],
+  pinnacleOdds: PinnacleOdd[],
+  pinnaclePrices: PinnaclePrice[],
 
-const databases = new sdk.Databases(client);
-console.log("starting");
+}
+const client = createDirectus<Schema>('https://directus-d4os4g4.service.wolframko.ru/').with(staticToken('YHdtOO8q1uspML5GmsZj0NkxH6sDIrSm')).with(rest());
 
 async function start() {
   const browser = await puppeteer.launch({
@@ -50,10 +72,10 @@ async function startParse(page: Page) {
         const data = await response.json();
         await addOdds(data);
       }
-  
+
       if (url.includes("sports/12/matchups")) {
         const data = await response.json();
-  
+
         await addOrUpdateMatch(data);
       }
     }
@@ -61,8 +83,18 @@ async function startParse(page: Page) {
 }
 
 async function addOrUpdateMatch(item: Match[]) {
-  item.forEach(async (data) => {
-    console.log("addOrUpdateMatch");
+  let matchesToAdd: {
+    id: number;
+    team1: string;
+    team2: string;
+    league: string;
+    discipline: string;
+    pinnacleUpdate: string;
+  }[] = []
+
+  let matchesToUpdate: number[] = []
+  console.log('addOrUpdateMatches')
+  for (let data of item) {
     const matchId = data.id.toString();
     const league = data.league;
     const tournamentName = league.name;
@@ -72,20 +104,22 @@ async function addOrUpdateMatch(item: Match[]) {
     const discipline = validDisciplines.find((d) =>
       tournamentName.startsWith(d)
     );
-
     if (!discipline) {
-      return;
+      continue;
     }
 
-    const match = await databases.listDocuments("parser", "matches", [
-      sdk.Query.equal("pinnacleId", +matchId),
-    ]);
-
-    if (match.total === 0) {
+    const match = await client.request(readItems("matches", {
+      filter: {
+        id: {
+          _eq: +matchId
+        }
+      }
+    }));
+    if (match.length === 0) {
       const newMatch = {
-        pinnacleId: +matchId,
-        pinnacleOdds: [],
-        teams: [participants[0].name, participants[1].name],
+        id: +matchId,
+        team1: participants[0].name,
+        team2: participants[1].name,
         league: league.name,
         discipline:
           discipline === "Dota 2"
@@ -97,113 +131,149 @@ async function addOrUpdateMatch(item: Match[]) {
                 : "lol",
         pinnacleUpdate: new Date(Date.now()).toISOString(),
       };
-      try {
-        await databases.createDocument("parser", "matches", sdk.ID.unique(), newMatch);
-      } catch (error) {
-        console.log(error)
-        console.log(newMatch)
-      }
-      
+      matchesToAdd.push(newMatch);
+
     } else {
-      try {
-        await databases.updateDocument(
-          "parser",
-          "matches",
-          match.documents[0].$id,
-          {
-            pinnacleUpdate: new Date(Date.now()).toISOString(),
-          }
-        );
-      } catch (error) {
-        console.log(error)
-      }
-      
+      matchesToUpdate.push(match[0].id)
     }
-  });
+  }
+  try {
+    if (matchesToAdd.length > 0) {
+      await client.request(createItems('matches', matchesToAdd));
+    }
+
+    if (matchesToUpdate.length > 0) {
+      await client.request(updateItems('matches', matchesToUpdate, {
+        pinnacleUpdate: new Date(Date.now()).toISOString()
+      }))
+    }
+  } catch (e) {
+    console.log(e);
+  }
 }
-function addOdds(data: BetData[]) {
+
+
+async function addOdds(item: BetData[]) {
   console.log("addOdds");
-  data.forEach(async (data) => {
-    let prices: {
+
+  // await client.request(
+  //   //@ts-ignore
+  //   triggerFlow('POST', '169ea130-3d44-4239-bc49-5fef070c32e6', item)
+  // );
+
+  let oddsForCreation: {
+    time: string;
+    map: number;
+    type: string;
+    prices: {
       designation: "over" | "under" | "home" | "away";
-      points?: number;
+      points?: number | undefined;
       price: number;
-    }[] = [];
+    }[];
+    index: string;
+  }[] = []
 
-    if (!['moneyline', 'total', 'spread'].includes(data.type)) {
-      return;
-    }
-    data.prices.forEach((priceObj) => {
-      if (!["over", "under", "home", "away"].includes(priceObj.designation)) {
-        return;
+  for (let data of item) {
+      let prices: {
+        designation: "over" | "under" | "home" | "away";
+        points?: number;
+        price: number;
+      }[] = [];
+
+      if (!['moneyline', 'total', 'spread'].includes(data.type)) {
+        continue;
       }
-      if (data.type === "moneyline") {
-        prices.push({
-          designation: priceObj.designation as "home" | "away",
-          price: +priceObj.price,
-        });
-      }
-      if (data.type === "spread" || data.type === "total") {
-        prices.push({
-          designation: priceObj.designation as
-            | "over"
-            | "under"
-            | "home"
-            | "away",
-          points: +priceObj.points,
-          price: +priceObj.price,
-        });
-      }
-    });
-
-    const match = await databases.listDocuments("parser", "matches", [
-      sdk.Query.equal("pinnacleId", +data.matchupId),
-    ]);
-    if (match.total === 0) {
-      return;
-    }
-    
-    const odds = await databases.listDocuments(
-      "parser",
-      "pinnacleOdds",
-      [
-        sdk.Query.equal("match", match.documents[0].$id),
-        sdk.Query.equal("map", data.period),
-        sdk.Query.equal("type", data.type),
-        sdk.Query.orderDesc("time")
-      ]
-    )
-
-    if (odds.total > 1) {
-      const latestDoc: any = odds.documents[0]
-      const latestPrices = latestDoc.prices;
-
-      if (latestPrices.length > 0) {
-        const pricearray = [latestPrices[0].price, latestPrices[1].price];
-        if (pricearray.includes(prices[0].price) && pricearray.includes(prices[1].price)) {
+      data.prices.forEach((priceObj) => {
+        if (!["over", "under", "home", "away"].includes(priceObj.designation)) {
           return;
         }
-        
+        if (data.type === "moneyline") {
+          prices.push({
+            designation: priceObj.designation as "home" | "away",
+            price: +priceObj.price,
+          });
+        }
+        if (data.type === "spread" || data.type === "total") {
+          prices.push({
+            designation: priceObj.designation as
+              | "over"
+              | "under"
+              | "home"
+              | "away",
+            points: +priceObj.points,
+            price: +priceObj.price,
+          });
+        }
+      });
+      // const match = await client.request(readItems("matches", {
+      //   filter: {
+      //     pinnacleId: {
+      //       _eq: data.matchupId
+      //     }
+      //   }
+      // }));
+
+      // if (match.length == 0) {
+      //   return;
+      // }
+      // const odds = await client.request(readItems("pinnacleOdds", {
+      //   fields: [
+      //     {
+      //       prices: [
+      //         'price'
+      //       ]
+      //     }
+      //   ],
+      //   filter: {
+      //     match: {
+      //       _eq: match[0].id
+      //     },
+      //     map: {
+      //       _eq: data.period
+      //     },
+      //     type: {
+      //       _eq: data.type
+      //     },
+      //     sort: ['-date_created']
+      //   }
+      // }));
+      // if (odds.length > 0) {
+      //   const latestDoc: any = odds[0]
+      //   const latestPrices = latestDoc.prices;
+
+      //   if (latestPrices.length > 0) {
+      //     const pricearray = [latestPrices[0].price, latestPrices[1].price];
+      //     if (pricearray.includes(prices[0].price) && pricearray.includes(prices[1].price)) {
+      //       return;
+      //     }
+
+      //   }
+      // }
+      const newOdd = {
+        time: new Date(Date.now()).toISOString(),
+        map: data.period,
+        type: data.type,
+        prices: prices,
+        match: {
+          "id": data.matchupId
+        },
+        index: `${data.period}${data.type}${data.matchupId}${prices[0].designation}${prices[0].points}${prices[0].price}${prices[1].designation}${prices[1].points}${prices[1].price}`,
       }
+
+      oddsForCreation.push(newOdd);
+  }
+
+  try {
+    console.log("Creating odds");
+    console.log(oddsForCreation.length);
+    await client.request(createItems('pinnacleOdds', oddsForCreation));
+  } catch (e: any) {
+    if (e.errors[0].message.includes("Invalid foreign key for field")) {
+    } else if (e.errors[0].message.includes("has to be unique"))  {
     }
-
-    
-    
-
-    const newOdd = {
-      time: new Date(Date.now()).toISOString(),
-      map: data.period,
-      type: data.type,
-      match: match.documents[0].$id,
-      prices: prices,
-    }
-
-    try {
-      await databases.createDocument("parser", "pinnacleOdds", sdk.ID.unique(), newOdd);
-    } catch (e) {
+    else {
       console.log(e);
-      console.log(newOdd);
     }
-    return;
-  });
+  }
+
 }

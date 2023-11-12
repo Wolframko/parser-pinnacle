@@ -1,26 +1,10 @@
 import { Query } from "appwrite";
 import sdk, { Graphql, Models } from "node-appwrite";
 
-const client = new sdk.Client();
+import { createDirectus, rest, staticToken } from '@directus/sdk';
 
-client
-  .setEndpoint("https://appwrite.wolframko.ru/v1")
-  .setProject("65402d551911a17fc8fb")
-  .setKey(
-    "ced51ca79c8a17c504a30fd8f48e3a7f0499963f835d06628ae84815e47ad7d1a4782271c10e3af2c86eab120ac090b45605c72b55c5474ecc005520368e7ce61ddc21c428359de4e37a99356277f60b687e5c6c707275e4df15481def760ebd9e30af475764205b0440885faf5b92f9dfb832fca92568727f2143bc6557f636"
-  );
+const client = createDirectus('https://directus-d4os4g4.service.wolframko.ru/').with(staticToken('YHdtOO8q1uspML5GmsZj0NkxH6sDIrSm')).with(rest());
 
-const databases = new sdk.Databases(client);
-const users = new sdk.Users(client);
-
-
-
-// try {
-//   await users.create('19216811',undefined, undefined, undefined, 'roman');
-// } catch (e) {
-//   const error = e as AppwriteException;
-//   console.log(error.message);
-// }
 
 console.log("starting");
 
