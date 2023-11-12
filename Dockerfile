@@ -1,25 +1,38 @@
-# This Dockerfile is used to build an headles vnc image based on Debian
+FROM consol/debian-xfce-vnc:nightly
+ENV REFRESHED_AT 2023-11-23
 
-FROM node:18-slim
+
+USER 0
+RUN set -uex; \
+    apt-get update; \
+    apt-get install -y ca-certificates curl gnupg; \
+    mkdir -p /etc/apt/keyrings; \
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+     | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg; \
+    NODE_MAJOR=18; \
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" \
+     > /etc/apt/sources.list.d/nodesource.list; \
+    apt-get -qy update; \
+    apt-get -qy install nodejs openssl unzip zip sudo;
+
 
 RUN corepack enable
-RUN apt-get update -y && apt-get install -y openssl
 
+RUN mkdir /opt/project
+RUN chown 1000 /opt/project
+
+RUN apt-get -qq clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# USER 1000
+RUN curl -fsSL https://bun.sh/install | bash
 # WORKER INSTALL
-ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=true
-COPY package.json /opt/orbita/package.json
-RUN cd /opt/orbita &&\
-	pnpm install
+COPY package.json /opt/project/package.json
 
+COPY index.ts /opt/project/index.ts
+COPY filldb.ts /opt/project/filldb.ts
+ADD ./types/ /opt/project/types/
 
-COPY index.js /opt/orbita/index.js
-COPY influxdata.js /opt/orbita/influxdata.js
-COPY before-shutdown.js /opt/orbita/before-shutdown.js
-RUN mkdir /opt/orbita/prisma 
-ADD prisma/ /opt/orbita/prisma/
-
-WORKDIR /opt/orbita
-
-RUN npx prisma generate
-
-CMD [ "pnpm", "start" ]
+WORKDIR /opt/project
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+RUN pnpm i

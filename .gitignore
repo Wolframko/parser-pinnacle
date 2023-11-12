@@ -8,3 +8,5 @@ yarn.lock
 .idea
 *_.*
 bun.lockb
+.env
+.pnpm-store
