@@ -115,11 +115,14 @@ async function addOrUpdateMatch(item: Match[]) {
         }
       }
     }));
+    const team1 = participants.filter(par => par.alignment === "home")[0].name
+    const team2 = participants.filter(par => par.alignment === "away")[0].name
+
     if (match.length === 0) {
       const newMatch = {
         id: +matchId,
-        team1: participants[0].name,
-        team2: participants[1].name,
+        team1: team1,
+        team2: team2,
         league: league.name,
         discipline:
           discipline === "Dota 2"
